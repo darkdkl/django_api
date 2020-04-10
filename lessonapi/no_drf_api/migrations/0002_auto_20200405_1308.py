@@ -8,7 +8,7 @@ def create_data(apps, schema_editor):
     fake = Faker()
     for _ in range(10):
         Presentation.objects.get_or_create(authorUsername=fake.first_name(),
-                                            deckSlug=fake.last_name_female())
+    deckSlug=f'{fake.last_name_female()}-{fake.color_name()}-{fake.last_name()}')
 
 
 
