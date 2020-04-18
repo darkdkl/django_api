@@ -10,7 +10,7 @@ from .validators import PresentationSchema
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from .models import UserProfile
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.response import Response
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from .serializers import PresentationSerializer
@@ -47,20 +47,24 @@ class ApiView(PermissionRequiredMixin, View):
 
 class DRFView(APIView):
     authentication_classes = (TokenAuthentication, SessionAuthentication)
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated | IsAdminUser]
 
     def get(self,request):
         presentations = Presentation.objects.all()
         serializer= PresentationSerializer(presentations,many = True)
         return Response(serializer.data)
     def post(self,request):
-        # print(self.request.data)
-        result = PresentationSchema().load(self.request.data)
-        print(result)
+        try:
+            result = PresentationSchema().load(self.request.data)
+        except ValidationError as error:
+            return Response(error.messages)
+        try:
+            presentation = Presentation.objects.get(deckId = result['deckId'],
+                                                    authorUsername = result['authorUsername'],
+                                                    deckSlug = result['deckSlug'])
+            serializer = PresentationSerializer(presentation)
 
-        # presentation = Presentation.objects.get(deckId = result['deckId'],
-        #                                         authorUsername = result['authorUsername'],
-        #                                         deckSlug = result['deckSlug'])
-        # serializer = PresentationSerializer(presentation)
-        # return Response(serializer.data)
-        return  Response({''})
+            return Response({'url': f"http://slides.com/{serializer.data['deckSlug']}"})
+        except Presentation.DoesNotExist:
+            return Response({'error': 'presentation not found'}, )
+
