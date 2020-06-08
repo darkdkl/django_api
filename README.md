@@ -1,6 +1,6 @@
 ![Screenshot](api.gif)
 
-# варинаты реализаций Django REST
+# Варианты реализаций Django REST
 
 ### Как запустить
 
